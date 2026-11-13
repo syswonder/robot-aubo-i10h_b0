@@ -1,0 +1,24 @@
+# Scripted planning for the deterministic fake VLM (robonix testing/fake_vlm).
+# It maps one task sentence to one pick_fruit call, so the whole
+# Pilot -> Executor -> skill -> primitives chain can be shown without a real
+# model. The task text is matched as a substring of the user's request.
+name: pick_fruit_back
+task: "把桌上的果实抓起来再放回去"  # i18n-ok: demo task sentence
+steps:
+  - status: in_progress
+    content: Picking the fruit and putting it back.
+    rtdl_description: pick the fruit and put it back
+    rtdl:
+      op: sequence
+      id: pick_fruit_back
+      children:
+        - op: do
+          id: pick_fruit
+          cap: fruit_pick.fruit_pick_pick_fruit
+          args: {destination: ""}
+          description: pick the fruit and put it back where it was
+          expect:
+            contract: robonix/skill/fruit_pick/pick_fruit
+            success: true
+  - status: done
+    content: The fruit was picked and put back.

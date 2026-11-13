@@ -1,0 +1,70 @@
+urdf:
+  path: ./model/aubo_i10H_B0.urdf
+  root_link: base_link
+  model_name: aubo_i10H_B0
+robot:
+  id: aubo_i10h_b0_fruit_pick
+  display_name: AUBO i10H (B0) fruit picking cell
+  family: manipulator
+  root_part: arm
+  exports: []
+  components:
+    - id: arm
+      type: manipulator
+      urdf_link: base_link
+      exports:
+        - provider_id: aubo_arm
+          capabilities:
+            - path: robonix/primitive/arm/joint_states
+            - path: robonix/primitive/arm/end_pose
+            - path: robonix/primitive/arm/joint_command
+            - path: robonix/primitive/arm/pos_command
+      components:
+        - {id: shoulder, type: joint, urdf_joint: shoulder_joint, exports: []}
+        - {id: upper_arm, type: joint, urdf_joint: upperArm_joint, exports: []}
+        - {id: forearm, type: joint, urdf_joint: foreArm_joint, exports: []}
+        - {id: wrist1, type: joint, urdf_joint: wrist1_joint, exports: []}
+        - {id: wrist2, type: joint, urdf_joint: wrist2_joint, exports: []}
+        - {id: wrist3, type: joint, urdf_joint: wrist3_joint, exports: []}
+        - id: gripper
+          type: parallel_jaw_gripper
+          urdf_link: tool0
+          exports:
+            - provider_id: jodell_gripper
+              capabilities:
+                - path: robonix/primitive/gripper/info
+                - path: robonix/primitive/gripper/move
+                - path: robonix/primitive/gripper/grip
+                - path: robonix/primitive/gripper/open
+                - path: robonix/primitive/gripper/stop
+                - path: robonix/primitive/gripper/state
+        - id: wrist_camera
+          type: camera
+          urdf_link: camera_optical_frame
+          exports:
+            - provider_id: mv_camera
+              capabilities:
+                - path: robonix/primitive/camera/rgb
+                - path: robonix/primitive/camera/snapshot
+                - path: robonix/primitive/camera/intrinsics
+description:
+  summary: >-
+    AUBO i10H_B0 arm on a fixed table, with a Jodell RG75-300 parallel gripper
+    and a monochrome Hikrobot camera on the wrist. It picks one fruit it sees
+    on the table with the fruit_pick skill.
+  can_do:
+    - Pick the fruit nearest the middle of the camera view and put it at a
+      named location or back where it was (fruit_pick pick_fruit); the arm
+      starts and ends at its photo pose.
+    - Tell whether the gripper is holding something after it closes.
+  cannot_do:
+    - Tell fruit kinds apart; the camera is monochrome and fruit is found by
+      shape and size against a photo of the empty table.
+    - See fruit that is not on the table surface, or measure depth; the table
+      height is configured.
+    - Pick fruit wider than about 34 mm; the open jaws are 40 mm apart.
+    - Avoid obstacles; the arm moves in straight lines at its photo-pose height.
+  notes:
+    - Call fruit_pick capture_background with the table empty before the first
+      pick and after the table, lighting or exposure changes.
+    - Joint 6 cannot turn below -1.80 rad (wrist cabling).

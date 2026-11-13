@@ -1,0 +1,7 @@
+rbnx-build/
+rbnx-boot/
+.runtime/
+.env
+vendor/*.whl
+__pycache__/
+*.pyc

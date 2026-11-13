@@ -1,0 +1,100 @@
+manifestVersion: 1
+name: aubo-i10h-b0-fruit-pick
+
+catalog:
+  name: robonix.robot.aubo.i10h_b0
+  version: 0.1.0
+  description: >-
+    AUBO i10H_B0 arm with a Jodell RG75-300 gripper and a Hikrobot wrist
+    camera that picks one fruit it sees on a table, driven by the fruit_pick
+    skill.
+  license: MulanPSL-2.0
+  tags: [robot, deploy, aubo, i10h_b0, manipulator, agriculture]
+  maintainers:
+    - HeartLinked <lfyhl0907@gmail.com>
+
+# The real arm with motion enabled. Start it with ./start.sh motion, which
+# also sets AUBO_ENABLE_MOTION=1. AUBO_HOST comes from .env. The skill refuses
+# to initialize while camera_in_tcp is null; see README.md, Calibration.
+system:
+  atlas: {listen: 127.0.0.1:50151, log: info}
+  soma: {robot_yaml: ./soma.yaml, log: info}
+  executor: {listen: 127.0.0.1:50161, log: info}
+  pilot:
+    listen: 127.0.0.1:50171
+    log: info
+    vlm:
+      upstream: "${VLM_BASE_URL}"
+      api_key: "${VLM_API_KEY}"
+      model: "${VLM_MODEL}"
+
+primitive:
+  - name: aubo_arm
+    url: git@github.com:syswonder/primitive-aubo-i_series-arm-rbnx.git
+    branch: main
+    config:
+      transport: sdk
+      host: "${AUBO_HOST}"
+      robot: rob1
+      expected_model: aubo_i10H
+      expected_tcp_offset: [0, 0, 0, 0, 0, 0]
+      joint_names: [shoulder_joint, upperArm_joint, foreArm_joint, wrist1_joint, wrist2_joint, wrist3_joint]
+      motion_enabled: true
+      # Check against the table and fixtures before the first run. min z keeps
+      # the fingertips (0.203 m below the flange) 10 mm above the table.
+      workspace: {min: [-0.53, -0.63, 0.195], max: [-0.13, -0.23, 0.50]}
+      linear_speed_m_s: 0.02          # raise once the workspace is checked
+      linear_accel_m_s2: 0.1
+      required_runtime: ""            # moveLine over RPC runs with the runtime Stopped
+      # Joint 6 stalls near -1.84 rad on the wrist cabling.
+      joint_limits:
+        min: [-6.2832, -6.2832, -6.2832, -6.2832, -6.2832, -1.80]
+        max: [6.2832, 6.2832, 6.2832, 6.2832, 6.2832, 6.2832]
+      min_payload_kg: 1.0
+      min_collision_level: 1
+
+  - name: jodell_gripper
+    url: git@github.com:syswonder/primitive-jodell-rg-gripper-rbnx.git
+    branch: main
+    config:
+      model: RG75-300
+      # Clear width between the fingertips at device positions 0 and 255.
+      width_calibration: [[0, 0.040], [255, 0.0]]
+      port: /dev/ttyUSB0
+      slave: 9
+      activate_on_start: false
+
+  - name: mv_camera
+    url: git@github.com:syswonder/primitive-hikrobot-mv-camera-rbnx.git
+    branch: main
+    config:
+      transport: aubo_vision
+      host: "${AUBO_HOST}"
+      width: 1224
+      height: 1024
+      rate_hz: 1.0
+      intrinsics:
+        width: 2448
+        height: 2048
+        fx: 3522.892478844156
+        fy: 3520.7526715503
+        cx: 1202.7796214331086
+        cy: 1026.0624281449052
+        d: [-0.12362652301140416, 0.3687664239876347, -0.00447903586522743, -0.0007790304242176477, 0.0]
+
+service: []
+
+skill:
+  - name: fruit_pick
+    url: git@github.com:syswonder/skill-fruit_pick-rbnx.git
+    branch: main
+    config:
+      arm_provider_id: aubo_arm
+      gripper_provider_id: jodell_gripper
+      camera_provider_id: mv_camera
+      home: {position: [-0.3257, -0.4333, 0.4695], rpy: [-3.1414, -0.0002, 1.2896]}
+      camera_in_tcp: null             # from scripts/calibration.py
+      fingertip_offset_m: 0.203
+      table_z_m: -0.0184              # re-measure whenever the table surface moves
+      fruit_diameter_m: [0.02, 0.08]
+      clearance_m: 0.003

@@ -1,0 +1,90 @@
+manifestVersion: 1
+name: aubo-i10h-b0-sim
+
+# Offline rehearsal of the whole chain. The arm runs its in-process simulator
+# from the photo pose and the gripper is tests/fake_rg.py (it always reports
+# holding). The camera is the real one, read-only, so the background and the
+# fruit come from the real table: start with the real arm at home.
+system:
+  atlas: {listen: 127.0.0.1:50151, log: info}
+  soma: {robot_yaml: ./soma.yaml, log: info}
+  executor: {listen: 127.0.0.1:50161, log: info}
+  pilot:
+    listen: 127.0.0.1:50171
+    log: info
+    vlm:
+      upstream: "${VLM_BASE_URL}"
+      api_key: "${VLM_API_KEY}"
+      model: "${VLM_MODEL}"
+
+primitive:
+  - name: aubo_arm
+    url: git@github.com:syswonder/primitive-aubo-i_series-arm-rbnx.git
+    branch: main
+    config:
+      transport: sim
+      robot: rob1
+      expected_model: aubo_i10H
+      expected_tcp_offset: [0, 0, 0, 0, 0, 0]
+      joint_names: [shoulder_joint, upperArm_joint, foreArm_joint, wrist1_joint, wrist2_joint, wrist3_joint]
+      motion_enabled: true
+      # Check against the table and fixtures before the first run. min z keeps
+      # the fingertips (0.203 m below the flange) 10 mm above the table.
+      workspace: {min: [-0.53, -0.63, 0.195], max: [-0.13, -0.23, 0.50]}
+      linear_speed_m_s: 0.1
+      required_runtime: ""            # moveLine over RPC runs with the runtime Stopped
+      # Joint 6 stalls near -1.84 rad on the wrist cabling.
+      joint_limits:
+        min: [-6.2832, -6.2832, -6.2832, -6.2832, -6.2832, -1.80]
+        max: [6.2832, 6.2832, 6.2832, 6.2832, 6.2832, 6.2832]
+      min_payload_kg: 1.0
+      min_collision_level: 1
+      sim:
+        initial_joints: [-1.8371, 0.2405, 2.1984, 0.3859, 1.5704, -1.5544]
+        tcp_offset: [0, 0, 0, 0, 0, 0]
+
+  - name: jodell_gripper
+    url: git@github.com:syswonder/primitive-jodell-rg-gripper-rbnx.git
+    branch: main
+    config:
+      model: RG75-300
+      # Clear width between the fingertips at device positions 0 and 255.
+      width_calibration: [[0, 0.040], [255, 0.0]]
+      port: /tmp/fake-rg
+      slave: 9
+      activate_on_start: true         # the fake skips the activation sweep
+
+  - name: mv_camera
+    url: git@github.com:syswonder/primitive-hikrobot-mv-camera-rbnx.git
+    branch: main
+    config:
+      transport: aubo_vision
+      host: "${AUBO_HOST}"
+      width: 1224
+      height: 1024
+      rate_hz: 1.0
+      intrinsics:
+        width: 2448
+        height: 2048
+        fx: 3522.892478844156
+        fy: 3520.7526715503
+        cx: 1202.7796214331086
+        cy: 1026.0624281449052
+        d: [-0.12362652301140416, 0.3687664239876347, -0.00447903586522743, -0.0007790304242176477, 0.0]
+
+service: []
+
+skill:
+  - name: fruit_pick
+    url: git@github.com:syswonder/skill-fruit_pick-rbnx.git
+    branch: main
+    config:
+      arm_provider_id: aubo_arm
+      gripper_provider_id: jodell_gripper
+      camera_provider_id: mv_camera
+      home: {position: [-0.3257, -0.4333, 0.4695], rpy: [-3.1414, -0.0002, 1.2896]}
+      camera_in_tcp: null             # from scripts/calibration.py
+      fingertip_offset_m: 0.203
+      table_z_m: -0.0184              # re-measure whenever the table surface moves
+      fruit_diameter_m: [0.02, 0.08]
+      clearance_m: 0.003
