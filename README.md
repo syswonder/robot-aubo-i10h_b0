@@ -4,6 +4,8 @@ Robonix deployment for an AUBO i10H_B0 arm on a fixed table, with a Jodell
 RG75-300 gripper on its own RS-485 line and a monochrome Hikrobot camera on
 the wrist. It picks a fruit it sees on the table.
 
+![AUBO i10H_B0 fruit-picking cell](assets/promo/01.jpg)
+
 | Piece | Repository | Knows about |
 |---|---|---|
 | Primitive `aubo_arm` | [`primitive-aubo-i_series-arm-rbnx`](https://github.com/syswonder/primitive-aubo-i_series-arm-rbnx) | the AUBO SDK; standard arm contracts |
