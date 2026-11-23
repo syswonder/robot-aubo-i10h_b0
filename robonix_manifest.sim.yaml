@@ -19,7 +19,7 @@ system:
 
 primitive:
   - name: aubo_arm
-    url: git@github.com:syswonder/primitive-aubo-i_series-arm-rbnx.git
+    url: https://github.com/syswonder/primitive-aubo-i_series-arm-rbnx
     branch: main
     config:
       transport: sim
@@ -44,7 +44,7 @@ primitive:
         tcp_offset: [0, 0, 0, 0, 0, 0]
 
   - name: jodell_gripper
-    url: git@github.com:syswonder/primitive-jodell-rg-gripper-rbnx.git
+    url: https://github.com/syswonder/primitive-jodell-rg-gripper-rbnx
     branch: main
     config:
       model: RG75-300
@@ -55,7 +55,7 @@ primitive:
       activate_on_start: true         # the fake skips the activation sweep
 
   - name: mv_camera
-    url: git@github.com:syswonder/primitive-hikrobot-mv-camera-rbnx.git
+    url: https://github.com/syswonder/primitive-hikrobot-mv-camera-rbnx
     branch: main
     config:
       transport: aubo_vision
@@ -76,7 +76,7 @@ service: []
 
 skill:
   - name: fruit_pick
-    url: git@github.com:syswonder/skill-fruit_pick-rbnx.git
+    url: https://github.com/syswonder/skill-fruit_pick-rbnx
     branch: main
     config:
       arm_provider_id: aubo_arm

@@ -51,8 +51,8 @@ AUBO's `pyaubo_sdk-0.26.0rc6-cp310-*.whl` in `vendor/` first) with the Robonix
 tree mounted from `ROBONIX_SOURCE`, a checkout with `target/release` built.
 Copy `.env.example` to `.env` and set at least `AUBO_HOST` (the controller's
 address) and `ROBONIX_SOURCE`. `build.sh`/`start.sh` clone the package
-repositories on the host into `rbnx-boot/cache/<repo>` with the host's SSH key
-(the container has no git credentials). The gripper's USB-RS485 adapter is
+repositories on the host into `rbnx-boot/cache/<repo>` before starting the
+container. The gripper's USB-RS485 adapter is
 passed in from `GRIPPER_DEVICE`; the readonly and motion modes refuse to start
 without it.
 
